@@ -72,7 +72,7 @@ def main():
 
     app = ApplicationBuilder().token(token).build()
     app.add_handler(MessageHandler(
-        filters.Document.FILE_EXTENSION("ips") | filters.Document.FILE_EXTENSION("txt"),
+        filters.Document.FILE_NAME.endswith(".ips") | filters.Document.FILE_NAME.endswith(".txt"),
         handle_file
     ))
 
