@@ -24,7 +24,7 @@ def create_sensor_table():
     
     conn.commit()
     conn.close()
-)
+
 def init_db():
     conn = sqlite3.connect("iphone_panic_dump.sql")  # Или путь к базе
     return conn
