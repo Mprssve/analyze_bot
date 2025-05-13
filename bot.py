@@ -21,6 +21,13 @@ def diagnose_from_panic(text: str) -> str:
             "- Если кнопка записи не нажимается — проблема в самом аудио кодеке\n"
             "- Если нажимается, но нет звука — проблема в периферии (микрофоны, шлейфы)"
         )
+    if "TG0B" in text or "TV0b" in text:
+        conclusions.append(
+            "**Ты дэбил**\n"
+            "'Это же аккумулятор!':\n"
+            "- не определяется аккумулятора\n"
+            "- проблемы по линии SWI"
+        )
 
     if "iap" in text or "portmicro" in text or "hydra" in text or "lightning" in text:
         conclusions.append(
