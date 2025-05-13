@@ -1,5 +1,6 @@
 import os
 import re
+import sqlite3
 from telegram import Update
 from telegram.ext import (
     ApplicationBuilder,
@@ -8,7 +9,31 @@ from telegram.ext import (
     CommandHandler,
     filters
 )
+def init_db():
+    conn = sqlite3.connect("iphone_panic_dump.db")  # Или путь к базе
+    return conn
 
+def save_log_to_db(timestamp, panic_string, diagnosis):
+    conn = init_db()
+    cursor = conn.cursor()
+    
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS logs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            timestamp TEXT,
+            panic_string TEXT,
+            diagnosis TEXT
+        )
+    ''')
+    
+    cursor.execute('''
+        INSERT INTO logs (timestamp, panic_string, diagnosis)
+        VALUES (?, ?, ?)
+    ''', (timestamp, panic_string, diagnosis))
+    
+    conn.commit()
+    conn.close()
+    
 # 🔍 Расшифровка panic-лога
 def diagnose_from_panic(text: str) -> str:
     text = text.lower()
