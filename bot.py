@@ -10,7 +10,7 @@ from telegram.ext import (
     filters
 )
 def create_sensor_table():
-    conn = sqlite3.connect("iphone_panic_dump.sql")
+    conn = sqlite3.connect("/Users/vadim/Downloads/analyze_bot/iphone_panic_dump.sql")
     cursor = conn.cursor()
 
     cursor.execute('''
@@ -26,7 +26,7 @@ def create_sensor_table():
     conn.close()
 
 def init_db():
-    conn = sqlite3.connect("iphone_panic_dump.sql")  # Или путь к базе
+    conn = sqlite3.connect("/Users/vadim/Downloads/analyze_bot/iphone_panic_dump.sql")  # Или путь к базе
     return conn
 
 def save_log_to_db(timestamp, panic_string, diagnosis):
