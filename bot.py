@@ -8,6 +8,21 @@ from telegram.ext import (
     MessageHandler,
     CommandHandler,
     filters
+def create_sensor_table():
+    conn = sqlite3.connect("iphone_panic_dump.db")
+    cursor = conn.cursor()
+
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS sensor_error_codes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            code TEXT NOT NULL,
+            description TEXT NOT NULL,
+            recommendation TEXT
+        )
+    ''')
+    
+    conn.commit()
+    conn.close()
 )
 def init_db():
     conn = sqlite3.connect("iphone_panic_dump.db")  # Или путь к базе
