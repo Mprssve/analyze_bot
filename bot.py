@@ -14,9 +14,9 @@ def diagnose_from_panic(text: str) -> str:
     text = text.lower()
     conclusions = []
 
-    if "audio-codec" in text or "audiocodec" in text:
+    if "audio-codec" in text or "60\nS.sensor array 0 - 7" in text:
         conclusions.append(
-            "**1) Нарушение работы аудио кодека**\n"
+            "**Ты дэбил**\n"
             "Проверьте работу микрофонов через диктофон:\n"
             "- Если кнопка записи не нажимается — проблема в самом аудио кодеке\n"
             "- Если нажимается, но нет звука — проблема в периферии (микрофоны, шлейфы)"
