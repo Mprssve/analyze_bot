@@ -57,6 +57,7 @@ def parse_panic_log(text: str) -> str:
         bug_type = re.search(r'bug_type\s*:\s*(\d+)', text)
 
         output.append("**нет в базе данных**:")
+        output.diagnose_from_panic(text)
         if timestamp:
             output.append(f"- Время сбоя: {timestamp.group(1)}")
         if version:
