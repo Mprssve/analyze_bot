@@ -41,6 +41,23 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "Отправь мне файл .ips или .txt, и я покажу расшифровку."
     )
 
+def diagnose_from_panic(text: str) -> str:
+    text = text.lower()
+    conclusions = []
+
+    if "audio-codec" in text or "audiocodec" in text:
+        conclusions.append("1) Нарушение работы аудио кодека\n"
+                           "Проверьте работу микрофонов через диктофон:\n"
+                           "- Если кнопка записи не нажимается — проблема в самом аудио кодеке\n"
+                           "- Если нажимается, но нет звука — проблема в периферии (микрофоны, шлейфы)")
+
+    if "iap" in text or "portmicro" in text or "hydra" in text or "lightning" in text:
+        conclusions.append("2) Нарушение работы контроллера Lightning\n"
+                           "- Возможный дефект: контроллер Hydra\n"
+                           "- Также проверьте нижний системный шлейф")
+
+    return "\n\n".join(conclusions) if conclusions else "Не удалось поставить диагноз: неизвестный тип сбоя."
+
 # Обработка полученного файла
 async def handle_file(update: Update, context: ContextTypes.DEFAULT_TYPE):
     document = update.message.document
