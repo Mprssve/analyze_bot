@@ -62,7 +62,7 @@ async def handle_file(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # Точка входа
 def main():
-    token = os.getenv("7150429783:AAG_t8pbChxSEK008aCoGmvyHpjDcUQ84qk")
+    token = os.getenv("TELEGRAM_BOT_TOKEN")
     if not token:
         print("Ошибка: переменная окружения TELEGRAM_BOT_TOKEN не задана.")
         return
