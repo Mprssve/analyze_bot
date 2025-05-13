@@ -57,7 +57,6 @@ def parse_panic_log(text: str) -> str:
         bug_type = re.search(r'bug_type\s*:\s*(\d+)', text)
 
         output.append("**нет в базе данных**:")
-        output.diagnose_from_panic(text)
         if timestamp:
             output.append(f"- Время сбоя: {timestamp.group(1)}")
         if version:
@@ -96,6 +95,7 @@ async def handle_file(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = file_bytes.decode("utf-8", errors="ignore")
 
     result = parse_panic_log(text)
+    result = diagnose_from_panic(text)
     await update.message.reply_text(result)
 
 # Точка входа
