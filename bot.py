@@ -16,7 +16,7 @@ def diagnose_from_panic(text: str) -> str:
 
     if "audio-codec" in text or "audiocodec" in text:
         conclusions.append(
-            "1) Нарушение работы аудио кодека\n"
+            "**1) Нарушение работы аудио кодека**\n"
             "Проверьте работу микрофонов через диктофон:\n"
             "- Если кнопка записи не нажимается — проблема в самом аудио кодеке\n"
             "- Если нажимается, но нет звука — проблема в периферии (микрофоны, шлейфы)"
@@ -24,20 +24,20 @@ def diagnose_from_panic(text: str) -> str:
 
     if "iap" in text or "portmicro" in text or "hydra" in text or "lightning" in text:
         conclusions.append(
-            "2) Нарушение работы контроллера Lightning\n"
+            "**2) Нарушение работы контроллера Lightning**\n"
             "- Возможный дефект: контроллер Hydra\n"
             "- Также проверьте нижний системный шлейф"
         )
 
     if "baseband" in text:
         conclusions.append(
-            "3) Обнаружены проблемы с модемом (Baseband)\n"
+            "**3) Обнаружены проблемы с модемом (Baseband)**\n"
             "- Возможные причины: неисправность модема, модемного питания или контроллера питания"
         )
 
     if "smc-charger" in text:
         conclusions.append(
-            "4) Нарушение работы зарядного контроллера (smc-charger)\n"
+            "**4) Нарушение работы зарядного контроллера (smc-charger)**\n"
             "- Проверьте цепи питания и зарядки устройства"
         )
 
@@ -56,7 +56,7 @@ def parse_panic_log(text: str) -> str:
         version = re.search(r'OS Version:\s*(.+)', text) or re.search(r'os_version\s*:\s*(.+)', text)
         bug_type = re.search(r'bug_type\s*:\s*(\d+)', text)
 
-        output.append("Обнаружен **iOS PANIC-лог**:")
+        output.append("**нет в базе данных**:")
         if timestamp:
             output.append(f"- Время сбоя: {timestamp.group(1)}")
         if version:
