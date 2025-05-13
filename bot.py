@@ -14,7 +14,7 @@ def diagnose_from_panic(text: str) -> str:
     text = text.lower()
     conclusions = []
 
-    if "audio-codec" in text or "60\nS.sensor array 0 - 7" in text:
+    if "audio-codec" in text or "60\ns.sensor array 0 - 7" in text:
         conclusions.append(
             "**Ты дэбил**\n"
             "Проверьте работу микрофонов через диктофон:\n"
