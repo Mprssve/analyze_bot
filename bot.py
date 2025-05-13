@@ -8,7 +8,7 @@ from telegram.ext import (
     MessageHandler,
     CommandHandler,
     filters
-
+)
 def create_sensor_table():
     conn = sqlite3.connect("iphone_panic_dump.sql")
     cursor = conn.cursor()
