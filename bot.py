@@ -1,97 +1,84 @@
 import os
-import re
 from telegram import Update
-from telegram.ext import (
-    ApplicationBuilder,
-    ContextTypes,
-    MessageHandler,
-    CommandHandler,
-    filters
-)
+from telegram.ext import ApplicationBuilder, ContextTypes, MessageHandler, filters
 
-# Парсер panic-логов
-def parse_panic_log(text: str) -> str:
-    output = []
-
-    if "panic" in text.lower():
-        # Поиск ключевых строк с допущениями
-        timestamp = re.search(r'(timestamp|time stamp)[\s:=]+(.+)', text, re.IGNORECASE)
-        panic_string = re.search(r'(panicString|panic string)[\s:=]+(.+)', text, re.IGNORECASE)
-        version = re.search(r'(OS Version|os_version|os version)[\s:=]+(.+)', text, re.IGNORECASE)
-        bug_type = re.search(r'bug_type[\s:=]+(\d+)', text, re.IGNORECASE)
-
-        output.append("Обнаружен **iOS PANIC-лог**:")
-        if timestamp:
-            output.append(f"- Время сбоя: {timestamp.group(2).strip()}")
-        if version:
-            output.append(f"- Версия iOS: {version.group(2).strip()}")
-        if panic_string:
-            output.append(f"- Причина сбоя: {panic_string.group(2).strip()}")
-        if bug_type:
-            output.append(f"- Тип ошибки: {bug_type.group(1).strip()}")
-
-        return "\n".join(output)
-    else:
-        return "Файл не содержит panic-лога или имеет неизвестный формат."
-
-# Обработка команды /start
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(
-        "Привет! Я бот для анализа iOS panic-логов.\n"
-        "Отправь мне файл .ips или .txt, и я покажу расшифровку."
-    )
-
+# 🔍 Расшифровка panic-лога
 def diagnose_from_panic(text: str) -> str:
     text = text.lower()
     conclusions = []
 
     if "audio-codec" in text or "audiocodec" in text:
-        conclusions.append("1) Нарушение работы аудио кодека\n"
-                           "Проверьте работу микрофонов через диктофон:\n"
-                           "- Если кнопка записи не нажимается — проблема в самом аудио кодеке\n"
-                           "- Если нажимается, но нет звука — проблема в периферии (микрофоны, шлейфы)")
+        conclusions.append(
+            "1) Нарушение работы аудио кодека\n"
+            "Проверьте работу микрофонов через диктофон:\n"
+            "- Если кнопка записи не нажимается — проблема в самом аудио кодеке\n"
+            "- Если нажимается, но нет звука — проблема в периферии (микрофоны, шлейфы)"
+        )
 
     if "iap" in text or "portmicro" in text or "hydra" in text or "lightning" in text:
-        conclusions.append("2) Нарушение работы контроллера Lightning\n"
-                           "- Возможный дефект: контроллер Hydra\n"
-                           "- Также проверьте нижний системный шлейф")
+        conclusions.append(
+            "2) Нарушение работы контроллера Lightning\n"
+            "- Возможный дефект: контроллер Hydra\n"
+            "- Также проверьте нижний системный шлейф"
+        )
 
-    return "\n\n".join(conclusions) if conclusions else "Не удалось поставить диагноз: неизвестный тип сбоя."
+    if "baseband" in text:
+        conclusions.append(
+            "3) Обнаружены проблемы с модемом (Baseband)\n"
+            "- Возможные причины: неисправность модема, модемного питания или контроллера питания"
+        )
 
-# Обработка полученного файла
+    if "smc-charger" in text:
+        conclusions.append(
+            "4) Нарушение работы зарядного контроллера (smc-charger)\n"
+            "- Проверьте цепи питания и зарядки устройства"
+        )
+
+    if not conclusions:
+        conclusions.append("Не удалось поставить диагноз: неизвестный тип сбоя.")
+
+    return "\n\n".join(conclusions)
+
+
+# 📨 Обработка присланного файла
 async def handle_file(update: Update, context: ContextTypes.DEFAULT_TYPE):
     document = update.message.document
-
     if not document:
-        await update.message.reply_text("Пожалуйста, отправьте файл .ips или .txt.")
         return
 
-    filename = document.file_name.lower()
-    if not (filename.endswith(".ips") or filename.endswith(".txt")):
-        await update.message.reply_text("Файл должен быть с расширением .ips или .txt.")
+    file = await context.bot.get_file(document.file_id)
+    file_path = f"/tmp/{document.file_name}"
+    await file.download_to_drive(file_path)
+
+    try:
+        with open(file_path, "r", encoding="utf-8") as f:
+            content = f.read()
+    except Exception as e:
+        await update.message.reply_text(f"Ошибка при чтении файла: {str(e)}")
         return
+    finally:
+        os.remove(file_path)
 
-    telegram_file = await document.get_file()
-    file_bytes = await telegram_file.download_as_bytearray()
-    text = file_bytes.decode("utf-8", errors="ignore")
+    diagnosis = diagnose_from_panic(content)
+    await update.message.reply_text(f"Обнаружен iOS PANIC-лог:\n\n{diagnosis}")
 
-    result = parse_panic_log(text)
-    await update.message.reply_text(result)
 
-# Точка входа
+# 🚀 Запуск Telegram-бота
 def main():
     token = os.getenv("TELEGRAM_BOT_TOKEN")
     if not token:
-        print("Ошибка: переменная окружения TELEGRAM_BOT_TOKEN не задана.")
+        print("❌ Ошибка: переменная окружения TELEGRAM_BOT_TOKEN не задана.")
         return
 
     app = ApplicationBuilder().token(token).build()
+    app.add_handler(MessageHandler(
+        filters.Document.FILE_EXTENSION("ips") | filters.Document.FILE_EXTENSION("txt"),
+        handle_file
+    ))
 
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(MessageHandler(filters.Document.ALL, handle_file))
-
-    print("Бот запущен...")
+    print("✅ Бот успешно запущен.")
     app.run_polling()
+
 
 if __name__ == "__main__":
     main()
