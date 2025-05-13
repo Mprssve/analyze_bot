@@ -14,20 +14,21 @@ def parse_panic_log(text: str) -> str:
     output = []
 
     if "panic" in text.lower():
-        timestamp = re.search(r'timestamp\s*:\s*(.+)', text)
-        panic_string = re.search(r'panicString\s*:\s*(.+)', text)
-        version = re.search(r'OS Version:\s*(.+)', text) or re.search(r'os_version\s*:\s*(.+)', text)
-        bug_type = re.search(r'bug_type\s*:\s*(\d+)', text)
+        # Поиск ключевых строк с допущениями
+        timestamp = re.search(r'(timestamp|time stamp)[\s:=]+(.+)', text, re.IGNORECASE)
+        panic_string = re.search(r'(panicString|panic string)[\s:=]+(.+)', text, re.IGNORECASE)
+        version = re.search(r'(OS Version|os_version|os version)[\s:=]+(.+)', text, re.IGNORECASE)
+        bug_type = re.search(r'bug_type[\s:=]+(\d+)', text, re.IGNORECASE)
 
         output.append("Обнаружен **iOS PANIC-лог**:")
         if timestamp:
-            output.append(f"- Время сбоя: {timestamp.group(1)}")
+            output.append(f"- Время сбоя: {timestamp.group(2).strip()}")
         if version:
-            output.append(f"- Версия iOS: {version.group(1)}")
+            output.append(f"- Версия iOS: {version.group(2).strip()}")
         if panic_string:
-            output.append(f"- Причина сбоя: {panic_string.group(1)}")
+            output.append(f"- Причина сбоя: {panic_string.group(2).strip()}")
         if bug_type:
-            output.append(f"- Тип ошибки: {bug_type.group(1)}")
+            output.append(f"- Тип ошибки: {bug_type.group(1).strip()}")
 
         return "\n".join(output)
     else:
