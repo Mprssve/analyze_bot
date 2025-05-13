@@ -1,6 +1,13 @@
 import os
+import re
 from telegram import Update
-from telegram.ext import ApplicationBuilder, ContextTypes, MessageHandler, filters
+from telegram.ext import (
+    ApplicationBuilder,
+    ContextTypes,
+    MessageHandler,
+    CommandHandler,
+    filters
+)
 
 # 🔍 Расшифровка panic-лога
 def diagnose_from_panic(text: str) -> str:
@@ -39,46 +46,71 @@ def diagnose_from_panic(text: str) -> str:
 
     return "\n\n".join(conclusions)
 
+# Парсер panic-логов
+def parse_panic_log(text: str) -> str:
+    output = []
 
-# 📨 Обработка присланного файла
+    if "panic" in text.lower():
+        timestamp = re.search(r'timestamp\s*:\s*(.+)', text)
+        panic_string = re.search(r'panicString\s*:\s*(.+)', text)
+        version = re.search(r'OS Version:\s*(.+)', text) or re.search(r'os_version\s*:\s*(.+)', text)
+        bug_type = re.search(r'bug_type\s*:\s*(\d+)', text)
+
+        output.append("Обнаружен **iOS PANIC-лог**:")
+        if timestamp:
+            output.append(f"- Время сбоя: {timestamp.group(1)}")
+        if version:
+            output.append(f"- Версия iOS: {version.group(1)}")
+        if panic_string:
+            output.append(f"- Причина сбоя: {panic_string.group(1)}")
+        if bug_type:
+            output.append(f"- Тип ошибки: {bug_type.group(1)}")
+
+        return "\n".join(output)
+    else:
+        return "Файл не содержит panic-лога или имеет неизвестный формат."
+
+# Обработка команды /start
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(
+        "Привет! Я бот для анализа iOS panic-логов.\n"
+        "Отправь мне файл .ips или .txt, и я покажу расшифровку."
+    )
+
+# Обработка полученного файла
 async def handle_file(update: Update, context: ContextTypes.DEFAULT_TYPE):
     document = update.message.document
+
     if not document:
+        await update.message.reply_text("Пожалуйста, отправьте файл .ips или .txt.")
         return
 
-    file = await context.bot.get_file(document.file_id)
-    file_path = f"/tmp/{document.file_name}"
-    await file.download_to_drive(file_path)
-
-    try:
-        with open(file_path, "r", encoding="utf-8") as f:
-            content = f.read()
-    except Exception as e:
-        await update.message.reply_text(f"Ошибка при чтении файла: {str(e)}")
+    filename = document.file_name.lower()
+    if not (filename.endswith(".ips") or filename.endswith(".txt")):
+        await update.message.reply_text("Файл должен быть с расширением .ips или .txt.")
         return
-    finally:
-        os.remove(file_path)
 
-    diagnosis = diagnose_from_panic(content)
-    await update.message.reply_text(f"Обнаружен iOS PANIC-лог:\n\n{diagnosis}")
+    telegram_file = await document.get_file()
+    file_bytes = await telegram_file.download_as_bytearray()
+    text = file_bytes.decode("utf-8", errors="ignore")
 
+    result = parse_panic_log(text)
+    await update.message.reply_text(result)
 
-# 🚀 Запуск Telegram-бота
+# Точка входа
 def main():
     token = os.getenv("TELEGRAM_BOT_TOKEN")
     if not token:
-        print("❌ Ошибка: переменная окружения TELEGRAM_BOT_TOKEN не задана.")
+        print("Ошибка: переменная окружения TELEGRAM_BOT_TOKEN не задана.")
         return
 
     app = ApplicationBuilder().token(token).build()
-    app.add_handler(MessageHandler(
-        filters.Document.FILE_NAME.endswith(".ips") | filters.Document.FILE_NAME.endswith(".txt"),
-        handle_file
-    ))
 
-    print("✅ Бот успешно запущен.")
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(MessageHandler(filters.Document.ALL, handle_file))
+
+    print("Бот запущен...")
     app.run_polling()
-
 
 if __name__ == "__main__":
     main()
